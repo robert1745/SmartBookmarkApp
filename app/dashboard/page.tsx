@@ -44,12 +44,12 @@ export default function Dashboard() {
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession()
-      
+
       if (!session) {
-        router.push('/login')
+        router.push('/')
         return
       }
-      
+
       console.log('[Auth] Logged in as:', session.user.email)
       setUser(session.user)
       await fetchBookmarks(session.user.id)
@@ -111,6 +111,19 @@ export default function Dashboard() {
       channel.unsubscribe()
     }
   }, [user])
+
+  // Third effect: Listen for auth state changes (logout from other tabs)
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        router.push('/')
+      }
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -190,6 +203,11 @@ export default function Dashboard() {
     setDeleting(null)
   }
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    window.location.href = '/'
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -202,12 +220,12 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl space-y-6">
         <div className="bg-white rounded-xl shadow-sm p-6 flex items-center justify-between">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Dashboard</h1>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">SmartBooking</h1>
           <button
-            onClick={() => router.push('/')}
-            className="rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 transition-colors shadow-sm"
+            onClick={handleLogout}
+            className="rounded-lg bg-red-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-red-700 transition-colors shadow-sm"
           >
-            Back to Home
+            Logout
           </button>
         </div>
 
